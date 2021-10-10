@@ -105,9 +105,6 @@ class ConfigTest extends TestCase
      */
     private $scopeTypeNormalizer;
 
-    /**
-     * @inheritdoc
-     */
     protected function setUp(): void
     {
         $this->eventManagerMock = $this->getMockForAbstractClass(ManagerInterface::class);
@@ -170,19 +167,13 @@ class ConfigTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testSaveDoesNotDoAnythingIfGroupsAreNotPassed(): void
+    public function testSaveDoesNotDoAnythingIfGroupsAreNotPassed()
     {
         $this->configLoaderMock->expects($this->never())->method('getConfigByPath');
         $this->model->save();
     }
 
-    /**
-     * @return void
-     */
-    public function testSaveEmptiesNonSetArguments(): void
+    public function testSaveEmptiesNonSetArguments()
     {
         $this->structureReaderMock->expects($this->never())->method('getConfiguration');
         $this->assertNull($this->model->getSection());
@@ -194,10 +185,7 @@ class ConfigTest extends TestCase
         $this->assertSame('', $this->model->getStore());
     }
 
-    /**
-     * @return void
-     */
-    public function testSaveToCheckAdminSystemConfigChangedSectionEvent(): void
+    public function testSaveToCheckAdminSystemConfigChangedSectionEvent()
     {
         $transactionMock = $this->createMock(Transaction::class);
 
@@ -205,27 +193,29 @@ class ConfigTest extends TestCase
 
         $this->configLoaderMock->expects($this->any())->method('getConfigByPath')->willReturn([]);
 
-        $this->eventManagerMock
-            ->method('dispatch')
-            ->withConsecutive(
-                [
-                    'admin_system_config_changed_section_',
-                    $this->arrayHasKey('website')
-                ],
-                [
-                    'admin_system_config_changed_section_',
-                    $this->arrayHasKey('store')
-                ]
-            );
+        $this->eventManagerMock->expects(
+            $this->at(0)
+        )->method(
+            'dispatch'
+        )->with(
+            'admin_system_config_changed_section_',
+            $this->arrayHasKey('website')
+        );
+
+        $this->eventManagerMock->expects(
+            $this->at(0)
+        )->method(
+            'dispatch'
+        )->with(
+            'admin_system_config_changed_section_',
+            $this->arrayHasKey('store')
+        );
 
         $this->model->setGroups(['1' => ['data']]);
         $this->model->save();
     }
 
-    /**
-     * @return void
-     */
-    public function testDoNotSaveReadOnlyFields(): void
+    public function testDoNotSaveReadOnlyFields()
     {
         $transactionMock = $this->createMock(Transaction::class);
         $this->transFactoryMock->expects($this->any())->method('create')->willReturn($transactionMock);
@@ -243,10 +233,18 @@ class ConfigTest extends TestCase
         $field->method('getGroupPath')->willReturn('section/1');
         $field->method('getId')->willReturn('key');
 
-        $this->configStructure
+        $this->configStructure->expects($this->at(0))
             ->method('getElement')
-            ->withConsecutive(['section/1'], ['section/1'], ['section/1/key'])
-            ->willReturnOnConsecutiveCalls($group, $group, $field);
+            ->with('section/1')
+            ->willReturn($group);
+        $this->configStructure->expects($this->at(1))
+            ->method('getElement')
+            ->with('section/1')
+            ->willReturn($group);
+        $this->configStructure->expects($this->at(2))
+            ->method('getElement')
+            ->with('section/1/key')
+            ->willReturn($field);
 
         $backendModel = $this->createPartialMock(
             Value::class,
@@ -260,27 +258,24 @@ class ConfigTest extends TestCase
         $this->model->save();
     }
 
-    /**
-     * @return void
-     */
-    public function testSaveToCheckScopeDataSet(): void
+    public function testSaveToCheckScopeDataSet()
     {
         $transactionMock = $this->createMock(Transaction::class);
         $this->transFactoryMock->expects($this->any())->method('create')->willReturn($transactionMock);
 
         $this->configLoaderMock->expects($this->any())->method('getConfigByPath')->willReturn([]);
 
-        $this->eventManagerMock
+        $this->eventManagerMock->expects($this->at(0))
             ->method('dispatch')
-            ->withConsecutive(
-                [
-                    'admin_system_config_changed_section_section',
-                    $this->arrayHasKey('website')
-                ],
-                [
-                    'admin_system_config_changed_section_section',
-                    $this->arrayHasKey('store')
-                ]
+            ->with(
+                'admin_system_config_changed_section_section',
+                $this->arrayHasKey('website')
+            );
+        $this->eventManagerMock->expects($this->at(0))
+            ->method('dispatch')
+            ->with(
+                'admin_system_config_changed_section_section',
+                $this->arrayHasKey('store')
             );
 
         $group = $this->createMock(Group::class);
@@ -290,10 +285,26 @@ class ConfigTest extends TestCase
         $field->method('getGroupPath')->willReturn('section/1');
         $field->method('getId')->willReturn('key');
 
-        $this->configStructure
+        $this->configStructure->expects($this->at(0))
             ->method('getElement')
-            ->withConsecutive(['section/1'], ['section/1'], ['section/1/key'], ['section/1'], ['section/1/key'])
-            ->willReturnOnConsecutiveCalls($group, $group, $field, $group, $field);
+            ->with('section/1')
+            ->willReturn($group);
+        $this->configStructure->expects($this->at(1))
+            ->method('getElement')
+            ->with('section/1')
+            ->willReturn($group);
+        $this->configStructure->expects($this->at(2))
+            ->method('getElement')
+            ->with('section/1/key')
+            ->willReturn($field);
+        $this->configStructure->expects($this->at(3))
+            ->method('getElement')
+            ->with('section/1')
+            ->willReturn($group);
+        $this->configStructure->expects($this->at(4))
+            ->method('getElement')
+            ->with('section/1/key')
+            ->willReturn($field);
 
         $this->scopeResolver->expects($this->atLeastOnce())
             ->method('getScope')
@@ -335,7 +346,7 @@ class ConfigTest extends TestCase
                 'scope_id' => 1,
                 'scope_code' => 'website_code',
                 'field_config' => null,
-                'fieldset_data' => ['key' => null]
+                'fieldset_data' => ['key' => null],
             ]);
         $backendModel->expects($this->once())
             ->method('setPath')
@@ -352,11 +363,9 @@ class ConfigTest extends TestCase
      * @param string $value
      * @param string $section
      * @param array $groups
-     *
-     * @return void
      * @dataProvider setDataByPathDataProvider
      */
-    public function testSetDataByPath(string $path, string $value, string $section, array $groups): void
+    public function testSetDataByPath(string $path, string $value, string $section, array $groups)
     {
         $this->model->setDataByPath($path, $value);
         $this->assertEquals($section, $this->model->getData('section'));
@@ -376,7 +385,7 @@ class ConfigTest extends TestCase
                 [
                     'b' => [
                         'fields' => [
-                            'c' => ['value' => 'value1']
+                            'c' => ['value' => 'value1'],
                         ],
                     ],
                 ],
@@ -392,7 +401,7 @@ class ConfigTest extends TestCase
                                 'groups' => [
                                     'd' => [
                                         'fields' => [
-                                            'e' => ['value' => 'value1']
+                                            'e' => ['value' => 'value1'],
                                         ],
                                     ],
                                 ],
@@ -404,10 +413,7 @@ class ConfigTest extends TestCase
         ];
     }
 
-    /**
-     * @return void
-     */
-    public function testSetDataByPathEmpty(): void
+    public function testSetDataByPathEmpty()
     {
         $this->expectException('UnexpectedValueException');
         $this->expectExceptionMessage('Path must not be empty');
@@ -416,11 +422,9 @@ class ConfigTest extends TestCase
 
     /**
      * @param string $path
-     *
-     * @return void
      * @dataProvider setDataByPathWrongDepthDataProvider
      */
-    public function testSetDataByPathWrongDepth(string $path): void
+    public function testSetDataByPathWrongDepth(string $path)
     {
         $currentDepth = count(explode('/', $path));
         $expectedException = 'Minimal depth of configuration is 3. Your configuration depth is ' . $currentDepth;
@@ -437,7 +441,7 @@ class ConfigTest extends TestCase
     {
         return [
             'depth 2' => ['section/group'],
-            'depth 1' => ['section']
+            'depth 1' => ['section'],
         ];
     }
 }

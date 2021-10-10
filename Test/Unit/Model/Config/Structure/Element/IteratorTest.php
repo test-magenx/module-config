@@ -25,9 +25,6 @@ class IteratorTest extends TestCase
      */
     protected $_flyweightMock;
 
-    /**
-     * @inheritdoc
-     */
     protected function setUp(): void
     {
         $elementData = ['group1' => ['id' => 1], 'group2' => ['id' => 2], 'group3' => ['id' => 3]];
@@ -37,23 +34,17 @@ class IteratorTest extends TestCase
         $this->_model->setElements($elementData, 'scope');
     }
 
-    /**
-     * @inheritdoc
-     */
     protected function tearDown(): void
     {
         unset($this->_model);
         unset($this->_flyweightMock);
     }
 
-    /**
-     * @return void
-     */
-    public function testIteratorInitializesFlyweight(): void
+    public function testIteratorInitializesFlyweight()
     {
-        $this->_flyweightMock
-            ->method('setData')
-            ->withConsecutive([['id' => 1], 'scope'], [['id' => 2], 'scope'], [['id' => 3], 'scope']);
+        $this->_flyweightMock->expects($this->at(0))->method('setData')->with(['id' => 1], 'scope');
+        $this->_flyweightMock->expects($this->at(2))->method('setData')->with(['id' => 2], 'scope');
+        $this->_flyweightMock->expects($this->at(4))->method('setData')->with(['id' => 3], 'scope');
         $this->_flyweightMock->expects($this->any())->method('isVisible')->willReturn(true);
         $counter = 0;
         foreach ($this->_model as $item) {
@@ -63,7 +54,7 @@ class IteratorTest extends TestCase
         $this->assertEquals(3, $counter);
     }
 
-    public function testIteratorSkipsNonValidElements(): void
+    public function testIteratorSkipsNonValidElements()
     {
         $this->_flyweightMock->expects($this->exactly(3))->method('isVisible')->willReturn(false);
         $this->_flyweightMock->expects($this->exactly(3))->method('setData');
@@ -78,7 +69,7 @@ class IteratorTest extends TestCase
      * @param bool $result
      * @dataProvider isLastDataProvider
      */
-    public function testIsLast($elementId, $result): void
+    public function testIsLast($elementId, $result)
     {
         $elementMock = $this->createMock(Field::class);
         $elementMock->expects($this->once())->method('getId')->willReturn($elementId);
@@ -88,7 +79,7 @@ class IteratorTest extends TestCase
     /**
      * @return array
      */
-    public function isLastDataProvider(): array
+    public function isLastDataProvider()
     {
         return [[1, false], [2, false], [3, true]];
     }
